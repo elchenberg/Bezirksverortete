@@ -3,7 +3,6 @@
 
 import copy
 import csv
-import json
 import tempfile
 import subprocess
 
@@ -98,12 +97,6 @@ for l, line in enumerate(PDFLINES):
             'bezirk': bezirk
         })
         continue
-
-with open('berlinbvvkandidierende2016.json', 'w') as jsonfile:
-    jsonfile.write(json.dumps(PERSONS,
-                              ensure_ascii=False,
-                              indent=4,
-                              sort_keys=True))
 
 with open('berlinbvvkandidierende2016.csv', 'w') as csvfile:
     FIELDNAMES = [
