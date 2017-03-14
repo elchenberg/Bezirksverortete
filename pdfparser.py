@@ -36,79 +36,102 @@ def pdf_to_plain_text(filename):
     text = pdftotext.stdout
     return text.decode()
 
-PDFTEXT = pdf_to_plain_text('berlinbvvkandidierende2016.pdf')
-PDFLINES = [line.strip() for line in PDFTEXT.split('\n')]
-
-PERSONS = []
-
-for l, line in enumerate(PDFLINES):
-    if not line:
-        continue
-    if line.startswith('Bezirk:'):
-        bezirk = line.split()[1]
-        continue
-    if line.startswith('Liste Nr'):
-        next_line = PDFLINES[l+1]
-        name_in_next_line = next_line.startswith('Name')
-        if not name_in_next_line:
-            if not line[-1] == '-':
-                line += ' '
-            line += next_line
-        liste = line.split(':')[1].strip()
-        liste, kurz = liste.split(' (')
-        kurz = kurz[:-1]
-        continue
+def extract_name(string):
+    titel = ''
+    nachname = ''
+    vornamen = ''
     try:
-        liste
-    except NameError:
-        continue
-    if line.startswith('Name'):
-        titel = ''
-        nachname = ''
-        vornamen = ''
-        geboren = ''
-        plz = ''
-        for string in PDFLINES[l:l+6]:
-            if string[:3] == 'Nam':
-                try:
-                    _, vornamen = string.split(', ')
-                    _, _, *nachname = _.split()
-                    if nachname[0] == 'Dr.':
-                        titel = nachname[0]
-                        nachname = ' '.join(nachname[1:])
-                    else:
-                        nachname = ' '.join(nachname)
-                except ValueError:
-                    vornamen = 'Can'
-                    nachname = 'Șepșul'
-            elif string[:3] == 'geb':
-                geboren = string.split()[1][:-1]
-            elif string[:3] == 'PLZ':
-                plz = string.split()[-1]
-                break
-        PERSONS.append({
-            'titel': titel,
-            'nachname': nachname,
-            'vornamen': vornamen,
-            'geboren': geboren,
-            'plz': plz,
-            'liste': liste,
-            'kurz': kurz,
-            'bezirk': bezirk
-        })
-        continue
+        _, vornamen = string.split(', ')
+        _, _, *nachname = _.split()
+        if nachname[0] == 'Dr.':
+            titel = nachname[0]
+            nachname = ' '.join(nachname[1:])
+        else:
+            nachname = ' '.join(nachname)
+    except ValueError:
+        vornamen = 'Can'
+        nachname = 'Șepșul'
+    return titel, nachname, vornamen
 
-with open('berlinbvvkandidierende2016.csv', 'w') as csvfile:
-    FIELDNAMES = [
-        'titel',
-        'nachname',
-        'vornamen',
-        'geboren',
-        'plz',
-        'liste',
-        'kurz',
-        'bezirk'
-    ]
-    WRITER = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
-    WRITER.writeheader()
-    WRITER.writerows(PERSONS)
+def extract_liste(strings):
+    line = strings[0]
+    next_line = strings[1]
+    liste = ''
+    kurz = ''
+    name_in_next_line = next_line.startswith('Name')
+    if not name_in_next_line:
+        if not line[-1] == '-':
+            line += ' '
+        line += next_line
+    liste = line.split(':')[1].strip()
+    liste, kurz = liste.split(' (')
+    kurz = kurz[:-1]
+    return liste, kurz
+
+def extract_person(strings):
+    titel = ''
+    nachname = ''
+    vornamen = ''
+    geboren = ''
+    plz = ''
+    for string in strings:
+        if string[:3] == 'Nam':
+            titel, nachname, vornamen = extract_name(string)
+        elif string[:3] == 'geb':
+            geboren = string.split()[1][:-1]
+        elif string[:3] == 'PLZ':
+            plz = string.split()[-1]
+            break
+    person = {
+        'titel': titel,
+        'nachname': nachname,
+        'vornamen': vornamen,
+        'geboren': geboren,
+        'plz': plz
+    }
+    return person
+
+def main():
+    pdftext = pdf_to_plain_text('.berlinbvvkandidierende2016.pdf')
+    pdflines = [line.strip() for line in pdftext.split('\n')]
+
+    kandidierende = []
+
+    for idl, line in enumerate(pdflines):
+        if not line:
+            continue
+        if line.startswith('Bezirk:'):
+            bezirk = line.split()[1]
+            continue
+        if line.startswith('Liste Nr'):
+            liste, kurz = extract_liste(pdflines[idl:idl+2])
+            continue
+        try:
+            liste
+        except NameError:
+            continue
+        if line.startswith('Name'):
+            person = extract_person(pdflines[idl:idl+6])
+            person['liste'] = liste
+            person['kurz'] = kurz
+            person['bezirk'] = bezirk
+            kandidierende.append(person)
+            continue
+
+    with open('.berlinbvvkandidierende2016.csv', 'w') as csvfile:
+        fieldnames = [
+            'titel',
+            'nachname',
+            'vornamen',
+            'geboren',
+            'plz',
+            'liste',
+            'kurz',
+            'bezirk'
+        ]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(kandidierende)
+
+if __name__ == '__main__':
+    main()
