@@ -34,11 +34,13 @@ def pdf_to_plain_text(filename):
         pdfwriter.write(tmpfile)
         tmpfile.seek(0)
 
-        pdftotext = subprocess.run(['pdftotext', '-layout', '-', '-'],
-                                   stdin=tmpfile,
-                                   stdout=subprocess.PIPE)
+        try:
+            pdftotext = subprocess.run(['pdftotext', '-layout', '-', '-'], stdin=tmpfile, stdout=subprocess.PIPE)
+            pdftotext = pdftotext.stdout
+        except AttributeError:
+            pdftotext = subprocess.check_output(['pdftotext', '-layout', '-', '-'], stdin=tmpfile)
         tmpfile.close()
-    text = pdftotext.stdout
+    text = pdftotext
     return text.decode()
 
 
