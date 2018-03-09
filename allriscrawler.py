@@ -80,6 +80,10 @@ def extract_councillor(htmltablerow):
         name = name.replace('Dr.', '')
         titel += ' Dr.'
         titel = titel.strip()
+    if 'Dipl.-Oec.' in name:
+        name = name.replace('Dipl.-Oec.', '')
+        titel += ' Dipl.-Oec.'
+        titel = titel.strip()
     name = ' '.join(name.split())
 
     fraktion = htmltablerow[4].text_content()
