@@ -1,0 +1,2 @@
+var elements=document.getElementsByClassName('sort');for(var i=elements.length-1;i>=0;--i){elements[i].innerHTML+='&nbsp;<span class="indicator">⇅</span>'}
+var table=document.getElementById('data').tHead;var row=table.insertRow(1);var cell=row.insertCell(0);cell.colSpan='4';cell.innerHTML='<label for="search">Suche</label><input id="search" class="search" placeholder="Suche ... z.B. 10317, Sebastian oder Reinickendorf">';var options={valueNames:['plz','name','fraktion','bvv']};var list=new List('data',options)
